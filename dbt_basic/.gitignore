@@ -3,3 +3,6 @@ target/
 dbt_packages/
 logs/
 .env
+
+# dbt profiles (contain credentials)
+profiles.yml
