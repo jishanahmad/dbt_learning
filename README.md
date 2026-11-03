@@ -47,6 +47,23 @@ models:
 * to create the bronze table just run `dbt run` from `dbt_basic` folder
 * goto database and verify if tables are created
 * under `taregt` folder you can check the exact sql which dbt has run to create the bronze tables.
-* 
+
+#### Create schema in dedicated place in bronze
+* define schema under dbt_project.yml
+```
+models:
+  dbt_basic:
+    # Config indicated by + and applies to all files under models/example/
+    bronze:
+      +materialized: table
+      schema: bronze
+    silver:
+      +materialized: table
+      schema: silver
+    gold:
+      +materialized: table
+      schema: gold
+```
+* create macros `/Users/jishanahmad/dbt_learning/dbt_basic/macros/generate_schema.sql` to take dynamic schema name
 
 ### 
