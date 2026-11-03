@@ -1,0 +1,11 @@
+dbt_basic:
+  outputs:
+    dev:
+      catalog: dbt_learning
+      host: dbc-6456dea0-a695.cloud.databricks.com
+      http_path: /sql/1.0/warehouses/8e0624c454f8ef21
+      schema: source
+      threads: 1
+      token: "{{ env_var('DATABRICKS_TOKEN') }}"
+      type: databricks
+  target: dev
