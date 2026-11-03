@@ -1,1 +1,1 @@
-select * from 
+select * from {{ source('source', 'fact_sales') }}

@@ -20,7 +20,7 @@ uv add dbt-databricks
     * git
     * power user for dbt
 
-## working with dbt
+## Test dbt setup
 * terminal/venv type `dbt init`
 * give project name and select database.
 * give host
@@ -29,3 +29,24 @@ uv add dbt-databricks
     - select use unity catalogue
     - pass catalogue and other details
 * goto `cd dbt_basic`and run `dbt debug` to test if everything is fine
+
+
+## Working with dbt
+
+### Bronze layer
+* under `models > create a bronze folder`
+* create a source foldera nd define the sources
+* under `bronze` define sql by referring the sources
+* make that broze entry in `dbt_project.yml` file as well
+```
+models:
+    dbt_basic
+        bronze:
+            +materialized: table
+```
+* to create the bronze table just run `dbt run` from `dbt_basic` folder
+* goto database and verify if tables are created
+* under `taregt` folder you can check the exact sql which dbt has run to create the bronze tables.
+* 
+
+### 
