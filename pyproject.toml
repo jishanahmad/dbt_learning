@@ -1,0 +1,20 @@
+[project]
+name = "dbt-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "jishan ahmad", email = "jisahma1@in.ibm.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-core>=1.12.6",
+    "dbt-databricks>=1.13.0",
+]
+
+[project.scripts]
+dbt-learning = "dbt_learning:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
