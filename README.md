@@ -137,4 +137,18 @@ seeds:
 
 ## Analysis
 * If you wantedto analyze of run adhoc query on data,you can use analysis folder
+
+## Jinja
+* Templating framework
+* using jinja you can write the dynamic queries to parse sql.
+* example jinja: /Users/jishanahmad/dbt_learning/dbt_basic/analyses/jinja-1.sql
+
+## Macros
+* similar to functions
+* example: /Users/jishanahmad/dbt_learning/dbt_basic/macros/generate_schema.sql
+
+## Silver layer
+* Define silve table cte and run the silver script `dbt run --select "models/silver"`
+
+## Snapshots
 * 
