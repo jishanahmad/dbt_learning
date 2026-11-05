@@ -1,7 +1,7 @@
 version: 2
 sources:
     - name: source
-      database: dbt_learning
+      database: '{{ target.catalog }}'
       schema: source
       tables:
         - name: fact_sales
@@ -10,3 +10,4 @@ sources:
         - name: dim_store
         - name: dim_product
         - name: dim_customer
+        - name: items

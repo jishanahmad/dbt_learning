@@ -151,4 +151,75 @@ seeds:
 * Define silve table cte and run the silver script `dbt run --select "models/silver"`
 
 ## Snapshots
-* 
+* to work with scd.
+* create a scd table (items) in databricks and add a source for it.
+```
+create table items(
+    id int,
+    name string,
+    catogory string,
+    updated_date timestamp
+);
+
+insert into items values(
+    1, 'item1', 'cat1', current_timestamp()),
+    (2, 'item2', 'cat2', current_timestamp()),
+    (3, 'item3', 'cat3', current_timestamp());
+```
+* create a gold table named `source_gold_items`. Take only unique values.
+* create a snapshots called `gold_items.yaml` for scd type 2
+```
+snapshots:
+  - name: gold_items
+    relation: ref('source_gold_items')
+    config:
+      schema: gold
+      database: dbt_learning
+      unique_key: id
+      strategy: timestamp
+      updated_at: updated_date
+      dbt_valid_to_current: "to_date('9999-12-31')"
+```
+* populate the snapshot `dbt build` to buid everything
+* insert new data into table
+```
+insert into items values(
+    (3, 'item3_new', 'cat3', current_timestamp()))
+```
+* again run `dbt build`.
+
+## CICD
+* Move the chnages from dev/test to prod
+* create a catalogue name `dbt_learning_prod` in databricks
+* make an entry for prod here `/Users/jishanahmad/dbt_learning/dbt_basic/profiles.yml`
+```
+dbt_basic:
+  outputs:
+    dev:
+      catalog: dbt_learning
+      host: dbc-6456dea0-a695.cloud.databricks.com
+      http_path: /sql/1.0/warehouses/8e0624c454f8ef21
+      schema: source
+      threads: 1
+      token: 
+      type: databricks
+    prod:
+      catalog: dbt_learning_prod
+      host: dbc-6456dea0-a695.cloud.databricks.com
+      http_path: /sql/1.0/warehouses/8e0624c454f8ef21
+      schema: source
+      threads: 1
+      token: 
+      type: databricks
+  target: dev
+```
+* Now whereever we have harcoded the cataloue name,we need to parametrized it.
+* file `/Users/jishanahmad/dbt_learning/dbt_basic/models/source/sources.yml` and `/Users/jishanahmad/dbt_learning/dbt_basic/snapshots/gold_items.yaml`
+* create a source table in `dbt_learning_prod` by doing like
+```
+create table dbt_learning_prod.source.fact_sales
+as
+select * from dbt_learning.source.fact_sales
+```
+* deploy in prodution by running `dbt build --target prod`
+* see what all steps passed/failed
