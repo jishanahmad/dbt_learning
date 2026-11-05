@@ -29,6 +29,7 @@ uv add dbt-databricks
     - select use unity catalogue
     - pass catalogue and other details
 * goto `cd dbt_basic`and run `dbt debug` to test if everything is fine
+* dbt looks for `profiles.yml` in the current project folder first, then in `~/.dbt/`. `dbt debug` prints which file it used. Keep both in sync (or keep only one) to avoid stale tokens.
 
 
 ## Working with dbt
@@ -47,6 +48,7 @@ models:
 * to create the bronze table just run `dbt run` from `dbt_basic` folder
 * In case you wanted to run any particular model(Not all) `dbt run --select bronze_date`
 * goto database and verify if tables are created
+* Run dbt from the `dbt_basic` folder with the venv active (`source .venv/bin/activate`), otherwise `dbt` is not found.
 * under `taregt` folder you can check the exact sql which dbt has run to create the bronze tables.
 
 #### Create schema in dedicated place in bronze
@@ -66,6 +68,8 @@ models:
       schema: gold
 ```
 * create macros `/Users/jishanahmad/dbt_learning/dbt_basic/macros/generate_schema.sql` to take dynamic schema name
+* Note: newer dbt expects the `+` prefix on all keys in `dbt_project.yml` (`+schema: bronze`). Without it you get `MissingPlusPrefixDeprecation`.
+* By default dbt builds the schema as `<target schema>_<custom schema>`; the `generate_schema` macro overrides this so the custom schema name is used as is.
 
 ## DBT Tests
 * Generic test can be added to any solution
@@ -108,7 +112,8 @@ models:
                     severity: warn
 ```
 * `singular test`: When you wanted to test a logic
-* Generic test can be created and passed as `/Users/jishanahmad/dbt_learning/dbt_basic/tests/generic/generic_non_nagative.sql`
+* Singular tests are plain `select` files in `tests/` that return the failing rows (0 rows = pass).
+* Generic test is a reusable `{% test name(model, column_name) %}` block. It must live in `tests/generic/` (or `macros/`), e.g. `/Users/jishanahmad/dbt_learning/dbt_basic/tests/generic/generic_non_negative.sql`. If left directly in `tests/` dbt runs it as a singular test and fails.
 * add this test in code
 ```
   - name: bronze_sales
@@ -148,6 +153,9 @@ seeds:
 * example: /Users/jishanahmad/dbt_learning/dbt_basic/macros/generate_schema.sql
 
 ## Silver layer
+* Silver joins all bronze models in `models/silver/silver_salesinfo.sql`. Pattern: one CTE per bronze model (`{{ ref('bronze_...') }}`), then a `joined` CTE with `left join`s from the fact (sales) to the dimensions.
+* Aggregate a many-rows table (e.g. returns) to the fact grain before joining, otherwise the join duplicates fact rows. Check `count(*)` = `count(distinct sales_id)` = bronze count.
+* `ref()` = reference another model (builds the DAG), `source()` = reference a raw table declared in `sources.yml`.
 * Define silve table cte and run the silver script `dbt run --select "models/silver"`
 
 ## Snapshots
@@ -187,6 +195,9 @@ insert into items values(
     (3, 'item3_new', 'cat3', current_timestamp()))
 ```
 * again run `dbt build`.
+* How it works: on each run dbt compares `updated_date` of the source row with the stored one. If it is newer, the old row gets `dbt_valid_to` filled and a new row is inserted with `dbt_valid_to = 9999-12-31` (the current record).
+* Gotcha: the upstream model must keep the **latest** row per key (`row_number() over (partition by id order by updated_date desc)`). With ascending order the new version is dropped and the snapshot never changes.
+* Snapshot columns added by dbt: `dbt_scd_id`, `dbt_updated_at`, `dbt_valid_from`, `dbt_valid_to`.
 
 ## CICD
 * Move the chnages from dev/test to prod
@@ -223,3 +234,22 @@ select * from dbt_learning.source.fact_sales
 ```
 * deploy in prodution by running `dbt build --target prod`
 * see what all steps passed/failed
+
+## Quick command cheat sheet
+| Command | What it does |
+|---|---|
+| `dbt debug` | test connection / profile / project config |
+| `dbt run` | build models only |
+| `dbt test` | run data tests only |
+| `dbt seed` | load CSVs from `seeds/` |
+| `dbt snapshot` | run snapshots only |
+| `dbt build` | seed + run + test + snapshot in DAG order (stops downstream on failure) |
+| `dbt show --inline "select ..."` | preview query result without creating anything |
+| `--select name`, `--select +name`, `--select name+` | one model / with upstream / with downstream |
+| `--target prod` | run against another output in `profiles.yml` |
+
+## Security notes
+* `profiles.yml` holds the Databricks token, so keep it out of git (it is in `dbt_basic/.gitignore`).
+* Never paste a real token in README/docs. Use a placeholder like `<your-databricks-token>` or `"{{ env_var('DATABRICKS_TOKEN') }}"`.
+* Secret scanner (Vault Radar pre-commit hook) blocks commits containing tokens. Remove the secret, revoke it in Databricks and generate a new one. Do not use `--no-verify`.
+* If the token expires: update it in `dbt_basic/profiles.yml` (and `~/.dbt/profiles.yml` if it exists), run `dbt debug`, then reload the VS Code window so Power User for dbt picks it up.
